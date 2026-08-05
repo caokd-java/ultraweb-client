@@ -14,3 +14,12 @@ The React Compiler is not enabled on this template because of its impact on dev 
 ## Expanding the ESLint configuration
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
+#cách test
+Quy trình Test hoàn chỉnh giữa 2 thiết bị (hoặc 2 cửa sổ):
+
+Bước 1: Khởi chạy Signaling ServerĐảm bảo Signaling Server (port 8080) đang chạy để trung chuyển kết nối WebRTC giữa 2 máy:Bash# Tại thư mục signaling-server
+node server.js.
+
+Bước 2: Chuẩn bị máy Bị Điều Khiển (Agent - Dùng file .exe)
+- [Tìm file UltraWeb Agent Setup 0.0.0.exe trong thư mục release/.]
