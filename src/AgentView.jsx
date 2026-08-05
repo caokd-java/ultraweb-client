@@ -14,6 +14,15 @@ export default function AgentView() {
     useEffect(() => {
         socketRef.current = io(SIGNAL_SERVER);
 
+        // Nếu chưa chạy trong môi trường Electron (đang mở bằng Chrome thuần)
+        if (!window.electronAPI) {
+            console.log("Đang kích hoạt Electron từ Web...");
+            fetch('/api/start-electron')
+                .then(res => res.json())
+                .then(data => console.log("Kết quả gọi API:", data))
+                .catch(err => console.error("Lỗi gọi API kích hoạt Electron:", err));
+        }
+
         return () => {
             if (socketRef.current) socketRef.current.disconnect();
             if (peerRef.current) peerRef.current.close();
@@ -47,7 +56,10 @@ export default function AgentView() {
                 receiveChannel.onmessage = (e) => {
                     const command = JSON.parse(e.data);
                     console.log("Lệnh nhận từ controller:", command);
-                    if (window.electronAPI) window.electronAPI.executeControl(command);
+                    if (window.electronAPI) {
+                        // window.electronAPI.executeControl(command);
+                        handleReceiveCommand(command);
+                    }
                 };
             };
 
@@ -92,9 +104,20 @@ export default function AgentView() {
         }
     };
 
+    const handleReceiveCommand = (command) => {
+        console.log("🤖 [Agent] Nhận lệnh điều khiển:", command);
+
+        // Gửi lệnh sang Main Process của Electron
+        if (window.electronAPI && window.electronAPI.sendControl) {
+            window.electronAPI.sendControl(command);
+        } else {
+            console.warn("Chưa có electronAPI!");
+        }
+    };
+
     return (
         <div style={{ padding: 20 }}>
-            <h2>Máy Bị Điều Khiển (Agent)</h2>
+            <h2>Agent</h2>
             {!isSharing ? (
                 <div>
                     <input

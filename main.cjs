@@ -1,7 +1,10 @@
 // ultraweb-client/main.cjs
-const { app, BrowserWindow, ipcMain, screen } = require("electron");
+const { app, BrowserWindow, ipcMain, screen, desktopCapturer, session } = require("electron");
 const path = require("path");
 const { mouse, keyboard, Button, Point } = require("@nut-tree-fork/nut-js");
+
+// Kiểm tra xem ứng dụng đang chạy ở môi trường Dev hay đã Build
+const isDev = !app.isPackaged;
 
 function createWindow() {
     const win = new BrowserWindow({
@@ -15,11 +18,31 @@ function createWindow() {
     });
 
     // Khi phát triển: Load từ localhost của Vite React
-    win.loadURL("http://localhost:5173");
+    if (isDev) {
+        // Khi lập trình: Load từ Vite dev server
+        win.loadURL("http://localhost:5173");
+    } else {
+        // Khi đóng gói Production: Load trực tiếp từ file index.html trong thư mục build
+        win.loadFile(path.join(__dirname, "dist/index.html"));
+    }
+
+    // 💡 KHẮC PHỤC LỖI CHIA SẺ MÀN HÌNH TRÊN ELECTRON
+    // Cho phép React gọi getDisplayMedia và tự động chọn màn hình chính
+    session.defaultSession.setDisplayMediaRequestHandler((request, callback) => {
+        desktopCapturer.getSources({ types: ['screen', 'window'] }).then((sources) => {
+            // Tự động chọn nguồn màn hình đầu tiên (Màn hình chính)
+            callback({ video: sources[0], audio: false });
+        }).catch((error) => {
+            console.error("Lỗi lấy danh sách màn hình Electron:", error);
+        });
+    });
 }
 
 // Xử lý các sự kiện chuột/bàn phím từ React đẩy lên
 ipcMain.on("robot-control", async (event, command) => {
+
+    console.log("📥 [Electron Main] Nhận lệnh điều khiển thực tế:", command);
+
     // Lấy độ phân giải thực tế của màn hình máy Host
     const primaryDisplay = screen.getPrimaryDisplay();
     const { width, height } = primaryDisplay.size;

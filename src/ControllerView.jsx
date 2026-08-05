@@ -78,6 +78,54 @@ export default function ControllerView() {
         });
     };
 
+    // 1. Hàm gửi gói tin chuẩn sang Agent
+    const sendControlCommand = (command) => {
+        const channel = dataChannelRef.current;
+
+        // Ưu tiên gửi qua DataChannel (P2P siêu nhanh)
+        if (channel && channel.readyState === "open") {
+            channel.send(JSON.stringify(command));
+        } else if (socketRef.current) {
+            // Dự phòng gửi qua Socket
+            socketRef.current.emit("control-command", { roomId: code, command });
+        }
+    };
+
+    // 2. Bắt sự kiện Di chuyển chuột trên khung <video>
+    const handleMouseMove = (e) => {
+        if (!videoRef.current) return;
+        const rect = videoRef.current.getBoundingClientRect();
+
+        // Tính tỷ lệ từ 0.0 đến 1.0 (Khớp với command.x và command.y ở main.cjs)
+        const x = (e.clientX - rect.left) / rect.width;
+        const y = (e.clientY - rect.top) / rect.height;
+
+        sendControlCommand({
+            type: "MOUSE_MOVE",
+            x: Math.max(0, Math.min(1, x)),
+            y: Math.max(0, Math.min(1, y))
+        });
+    };
+
+    // 3. Bắt sự kiện Click chuột (MouseDown) trên <video>
+    const handleMouseDown = (e) => {
+        if (!videoRef.current) return;
+
+        // button = 0 (chuột trái), button = 2 (chuột phải)
+        sendControlCommand({
+            type: "MOUSE_DOWN",
+            button: e.button
+        });
+    };
+
+    // 4. Bắt sự kiện Gõ phím
+    const handleKeyDown = (e) => {
+        sendControlCommand({
+            type: "KEY_DOWN",
+            key: e.key
+        });
+    };
+
     const handleVideoClick = (e) => {
         const channel = dataChannelRef.current;
         const rect = videoRef.current.getBoundingClientRect();
@@ -97,7 +145,7 @@ export default function ControllerView() {
 
     return (
         <div style={{ padding: 20 }}>
-            <h2>Máy Điều Khiển (Controller)</h2>
+            <h2>Controller</h2>
             <input
                 type="text"
                 placeholder="Mã phòng (VD: 123456)"
@@ -113,6 +161,9 @@ export default function ControllerView() {
                 muted
                 style={{ width: '80vw', height: '60vh', background: '#000' }}
                 onClick={handleVideoClick}
+                onMouseMove={handleMouseMove}
+                onMouseDown={handleMouseDown}
+                onContextMenu={(e) => e.preventDefault()} // Chặn menu mặc định khi click chuột phải
             />
         </div>
     );
