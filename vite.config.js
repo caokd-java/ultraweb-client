@@ -40,4 +40,7 @@ function launchElectronPlugin() {
 
 export default defineConfig({
   plugins: [react(), launchElectronPlugin()],
+  server: {
+    allowedHosts: ['favored-register-pager.ngrok-free.dev'],
+  }
 });
