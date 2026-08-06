@@ -1,7 +1,7 @@
 // ultraweb-client/main.cjs
 const { app, BrowserWindow, ipcMain, screen, desktopCapturer, session } = require("electron");
 const path = require("path");
-const { mouse, keyboard, Button, Point } = require("@nut-tree-fork/nut-js");
+const { mouse, keyboard, Button, Point, Key} = require("@nut-tree-fork/nut-js");
 
 // Kiểm tra xem ứng dụng đang chạy ở môi trường Dev hay đã Build
 const isDev = !app.isPackaged;
@@ -60,7 +60,17 @@ ipcMain.on("robot-control", async (event, command) => {
         }
 
         if (command.type === "KEY_DOWN") {
-            await keyboard.type(command.key);
+            // Map tên phím từ Web sang Key enum của nut-js nếu cần phím đặc biệt
+            if (command.key === "Enter") {
+                await keyboard.type(Key.Enter);
+            } else if (command.key === "Backspace") {
+                await keyboard.type(Key.Backspace);
+            } else if (command.key === " ") {
+                await keyboard.type(Key.Space);
+            } else if (command.key.length === 1) {
+                // Ký tự thông thường (a, b, c, 1, 2, 3...)
+                await keyboard.type(command.key);
+            }
         }
     } catch (err) {
         console.log("Lỗi điều khiển hệ thống: ", err);
